@@ -1,9 +1,6 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using API.Data;
 using API.EntitiesorModels;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,6 +8,8 @@ namespace API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")] // /api/User
+
+    [Authorize]
     public class UserController : ControllerBase
     {
         private readonly DataContex _dbcontex;
@@ -19,9 +18,10 @@ namespace API.Controllers
             _dbcontex = contex;
         }
 
+        [AllowAnonymous]
         [HttpGet]
 
-        public async Task <ActionResult<IEnumerable<AppUser>>> GetUSer()
+        public async Task<ActionResult<IEnumerable<AppUser>>> GetUSer()
         {
             var user = await _dbcontex.Users.ToListAsync();
             return Ok(user);
@@ -30,7 +30,8 @@ namespace API.Controllers
         [HttpGet]
         [Route("{id}")] // api/User/id
 
-        public async Task<ActionResult<AppUser>> GetUSerById(int id){
+        public async Task<ActionResult<AppUser>> GetUSerById(int id)
+        {
             return await _dbcontex.Users.FindAsync(id);
         }
 
