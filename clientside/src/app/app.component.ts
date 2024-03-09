@@ -1,30 +1,33 @@
-import { HttpClient} from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Component, OnInit } from '@angular/core';
-
+import { User } from './_model/User';
+import { AccountService } from './_services/account.service';
 
 @Component({
   selector: 'app-root',
   templateUrl: './app.component.html',
-  styleUrls: ['./app.component.css']
+  styleUrls: ['./app.component.css'],
 })
 export class AppComponent implements OnInit {
   title = 'clientside';
-  users : any;
+  users: any;
 
-  constructor(private http : HttpClient){
+  constructor(
+    private http: HttpClient,
+    private accountService: AccountService
+  ) {}
 
-  }
   ngOnInit(): void {
-    this.http.get('https://localhost:7161/api/user').subscribe({
-      next : (response)=>{
-        this.users = response
-      },
-      error : (error) =>{
-        console.log(error);
-      },
-      complete : () =>{
-        console.log("Request Completed");
-      }
-    });
+    this.setCurrentUser();
+  }
+
+  setCurrentUser() {
+    const userString = localStorage.getItem('user');
+    if (userString) {
+      const user: User = JSON.parse(userString);
+      this.accountService.setCurrentUser(user);
+    } else {
+      return;
+    }
   }
 }
