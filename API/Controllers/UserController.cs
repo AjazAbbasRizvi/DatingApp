@@ -1,38 +1,41 @@
-using API.Data;
-using API.EntitiesorModels;
+using API.Dtos;
+using API.Interfaces;
+using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")] // /api/User
 
-    [Authorize]
     public class UserController : ControllerBase
     {
-        private readonly DataContex _dbcontex;
-        public UserController(DataContex contex)
+        private readonly IUserRepository _userRepository;
+        private readonly IMapper _mapper;
+        public UserController(IUserRepository userRepository, IMapper mapper)
         {
-            _dbcontex = contex;
-        }
-
-        [AllowAnonymous]
-        [HttpGet]
-
-        public async Task<ActionResult<IEnumerable<AppUser>>> GetUSer()
-        {
-            var user = await _dbcontex.Users.ToListAsync();
-            return Ok(user);
+            _userRepository = userRepository;
+            _mapper = mapper;
         }
 
         [HttpGet]
-        [Route("{id}")] // api/User/id
 
-        public async Task<ActionResult<AppUser>> GetUSerById(int id)
+        public async Task<ActionResult<IEnumerable<MemberDto>>> GetUsers()
         {
-            return await _dbcontex.Users.FindAsync(id);
+            var users = await _userRepository.GetUserAsync();
+            var usersToReturn = _mapper.Map<IEnumerable<MemberDto>>(users);
+            return Ok(usersToReturn);
+        }
+
+        [HttpGet]
+        [Route("{username}")] // api/User/username
+
+        public async Task<ActionResult<MemberDto>> GetUser(string username)
+        {
+            var user = await _userRepository.GetUserByUsernameAsync(username);
+
+            return _mapper.Map<MemberDto>(user);
         }
 
 
