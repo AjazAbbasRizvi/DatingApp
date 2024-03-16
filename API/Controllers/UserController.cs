@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers
 {
+    [Authorize]
     [ApiController]
     [Route("api/[controller]")] // /api/User
 
@@ -19,6 +20,7 @@ namespace API.Controllers
             _mapper = mapper;
         }
 
+        
         [HttpGet]
 
         public async Task<ActionResult<IEnumerable<MemberDto>>> GetUsers()
@@ -27,7 +29,7 @@ namespace API.Controllers
             var usersToReturn = _mapper.Map<IEnumerable<MemberDto>>(users);
             return Ok(usersToReturn);
         }
-
+        
         [HttpGet]
         [Route("{username}")] // api/User/username
 
