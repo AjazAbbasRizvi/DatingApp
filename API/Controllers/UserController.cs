@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using API.Dtos;
 using API.Interfaces;
 using AutoMapper;
@@ -20,7 +21,7 @@ namespace API.Controllers
             _mapper = mapper;
         }
 
-        
+
         [HttpGet]
 
         public async Task<ActionResult<IEnumerable<MemberDto>>> GetUsers()
@@ -29,7 +30,7 @@ namespace API.Controllers
             var usersToReturn = _mapper.Map<IEnumerable<MemberDto>>(users);
             return Ok(usersToReturn);
         }
-        
+
         [HttpGet]
         [Route("{username}")] // api/User/username
 
@@ -38,6 +39,32 @@ namespace API.Controllers
             var user = await _userRepository.GetUserByUsernameAsync(username);
 
             return _mapper.Map<MemberDto>(user);
+        }
+
+        [HttpPut]
+
+        public async Task<ActionResult> UpdateUser(MemberUpdateDto memberUpdateDto)
+        {
+            var username = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var user = await _userRepository.GetUserByUsernameAsync(username);
+
+            if (user == null)
+            {
+                return NotFound();
+            }
+            else
+            {
+                _mapper.Map(memberUpdateDto, user);
+            }
+
+            if (await _userRepository.SaveAllAsync())
+            {
+                return NoContent();
+            }
+            else
+            {
+                return BadRequest("failed to update User");
+            }
         }
 
 
