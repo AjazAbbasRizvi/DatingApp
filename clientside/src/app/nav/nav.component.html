@@ -25,6 +25,7 @@
           where we want to start our dropdown" -->
 
         <div *ngIf="isLoggedIn" class="dropdown" dropdown> 
+          <img src="{{user.photoUrl}}" alt="User Photo">
             <a class="dropdown-toggle text-light text-decoration-none" dropdownToggle>Welcome {{user.username | titlecase}}</a>
             <div class="dropdown-menu" *dropdownMenu>
                 <a class="dropdown-item" routerLink="/member/edit" >Edit Profile</a>
