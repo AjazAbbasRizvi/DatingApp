@@ -4,6 +4,7 @@ using API.Data;
 using API.Dtos;
 using API.EntitiesorModels;
 using API.Interfaces;
+using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -17,10 +18,13 @@ namespace API.Controllers
 
         private readonly ITokenService _tokenService;
 
-        public AccountController(DataContex contex, ITokenService tokenService)
+        private readonly IMapper _mapper;
+
+        public AccountController(DataContex contex, ITokenService tokenService, IMapper mapper)
         {
             _dbcontext = contex;
             _tokenService = tokenService;
+            _mapper = mapper;
         }
 
         [HttpPost]
@@ -31,16 +35,17 @@ namespace API.Controllers
 
             if (await UserExist(registerDto.UserName))
             {
-                return BadRequest("UserName is Taken");
+                return BadRequest("Oops Username is Taken! Please choose another Username");
             }
 
+            var user = _mapper.Map<AppUser>(registerDto);
+
             using var hmac = new HMACSHA512();
-            var user = new AppUser
-            {
-                UserName = registerDto.UserName.ToLower(),
-                PasswordHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(registerDto.Password)),
-                PasswordSalt = hmac.Key
-            };
+
+            user.UserName = registerDto.UserName.ToLower();
+            user.PasswordHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(registerDto.Password));
+            user.PasswordSalt = hmac.Key;
+
 
             _dbcontext.Users.Add(user);
             await _dbcontext.SaveChangesAsync();
@@ -48,7 +53,10 @@ namespace API.Controllers
             return new UserDto
             {
                 Username = user.UserName,
-                Token = _tokenService.CreateToken(user)
+                Token = _tokenService.CreateToken(user),
+                PhotoUrl = user.Photos.FirstOrDefault(x => x.IsMain)?.Url,
+                KnownAs = user.KnownAs,
+                Gender = user.Gender
             };
         }
 
@@ -84,7 +92,9 @@ namespace API.Controllers
             {
                 Username = user.UserName,
                 Token = _tokenService.CreateToken(user),
-                PhotoUrl = user.Photos.FirstOrDefault(x => x.IsMain)?.Url
+                PhotoUrl = user.Photos.FirstOrDefault(x => x.IsMain)?.Url,
+                KnownAs = user.KnownAs,
+                Gender = user.Gender
             };
         }
     }

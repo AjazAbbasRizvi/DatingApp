@@ -48,21 +48,21 @@ export class PhotoEditorComponent implements OnInit {
             if (p.isMain) {
               p.isMain = false;
             }
-              if (p.id === photo.id) {
-                p.isMain = true;
-              }
+            if (p.id === photo.id) {
+              p.isMain = true;
+            }
           });
         }
       },
     });
   }
 
-  deletePhoto(photoId : number){
+  deletePhoto(photoId: number) {
     this.membersService.deletePhoto(photoId).subscribe({
-      next : () =>{
-        this.member.photos = this.member.photos.filter(x => x.id !== photoId);
-      }
-    })
+      next: () => {
+        this.member.photos = this.member.photos.filter((x) => x.id !== photoId);
+      },
+    });
   }
 
   fileOverBase(e: any) {
@@ -88,6 +88,11 @@ export class PhotoEditorComponent implements OnInit {
       if (response) {
         const photo = JSON.parse(response);
         this.member?.photos.push(photo);
+        if (photo.isMain && this.user && this.member) {
+          this.user.photoUrl = photo.url;
+          this.member.photoUrl = photo.url;
+          this.accountService.setCurrentUser(this.user);
+        }
       }
     };
   }

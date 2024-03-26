@@ -26,7 +26,8 @@ namespace API.Services
             //claims are information which a user claim
 
             var claims = new List<Claim>{
-                new Claim(JwtRegisteredClaimNames.NameId, appUser.UserName)
+                new Claim(JwtRegisteredClaimNames.NameId, appUser.Id.ToString()),
+                new Claim(JwtRegisteredClaimNames.UniqueName, appUser.UserName)
             };
 
             // Key Encription

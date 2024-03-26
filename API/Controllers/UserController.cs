@@ -1,6 +1,8 @@
 using System.Security.Claims;
 using API.Dtos;
 using API.EntitiesorModels;
+using API.Extensions;
+using API.Helpers;
 using API.Interfaces;
 using AutoMapper;
 using Microsoft.AspNetCore.Authorization;
@@ -9,6 +11,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace API.Controllers
 {
     [Authorize]
+    [ServiceFilter(typeof(LogUserActivity))]
     [ApiController]
     [Route("api/[controller]")] // /api/User
 
@@ -28,11 +31,22 @@ namespace API.Controllers
 
         [HttpGet]
 
-        public async Task<ActionResult<IEnumerable<MemberDto>>> GetUsers()
+        public async Task<ActionResult<IEnumerable<MemberDto>>> GetUsers([FromQuery] UserParams userParams)
         {
-            var users = await _userRepository.GetUserAsync();
-            var usersToReturn = _mapper.Map<IEnumerable<MemberDto>>(users);
-            return Ok(usersToReturn);
+            var username = User.FindFirst(ClaimTypes.Name)?.Value;
+            var currentUser = await _userRepository.GetUserByUsernameAsync(username);
+            userParams.CurrentUsername = currentUser.UserName;
+
+            if (string.IsNullOrEmpty(userParams.Gender))
+            {
+                userParams.Gender = currentUser.Gender == "male" ? "female" : "male";
+            }
+
+            var users = await _userRepository.GetUserAsync(userParams);
+            Response.AddPaginationHeader(new PaginationHeader(users.CurrentPage, users.PageSize, users.TotalCount, users.TotalPages));
+
+            // var usersToReturn = _mapper.Map<IEnumerable<MemberDto>>(users);
+            return Ok(users);
         }
 
         [HttpGet]
@@ -49,7 +63,7 @@ namespace API.Controllers
 
         public async Task<ActionResult> UpdateUser(MemberUpdateDto memberUpdateDto)
         {
-            var username = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var username = User.FindFirst(ClaimTypes.Name)?.Value;
             var user = await _userRepository.GetUserByUsernameAsync(username);
 
             if (user == null)
@@ -76,7 +90,7 @@ namespace API.Controllers
 
         public async Task<ActionResult<PhotoDto>> AddPhoto(IFormFile file)
         {
-            var username = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var username = User.FindFirst(ClaimTypes.Name)?.Value;
             var user = await _userRepository.GetUserByUsernameAsync(username);
 
             if (user == null)
@@ -107,7 +121,7 @@ namespace API.Controllers
             if (await _userRepository.SaveAllAsync())
             {
                 // return _mapper.Map<PhotoDto>(photo);
-                return CreatedAtAction(nameof(GetUser), new {username = user.UserName}, _mapper.Map<PhotoDto>(photo));
+                return CreatedAtAction(nameof(GetUser), new { username = user.UserName }, _mapper.Map<PhotoDto>(photo));
             }
             else
             {
@@ -118,11 +132,11 @@ namespace API.Controllers
         }
 
         [HttpPut]
-        [Route("set-main-photo/{photoId}")] 
+        [Route("set-main-photo/{photoId}")]
 
         public async Task<ActionResult> setMainPhoto(int photoId)
         {
-            var username = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var username = User.FindFirst(ClaimTypes.Name)?.Value;
             var user = await _userRepository.GetUserByUsernameAsync(username);
 
             if (user == null)
@@ -146,7 +160,7 @@ namespace API.Controllers
             if (currentMain != null)
             {
                 currentMain.IsMain = false;
-            } 
+            }
             photo.IsMain = true;
 
             if (await _userRepository.SaveAllAsync())
@@ -154,7 +168,8 @@ namespace API.Controllers
                 return NoContent();
             }
 
-            else{
+            else
+            {
                 return BadRequest("Problem Setting Up the Photo");
             }
         }
@@ -162,16 +177,17 @@ namespace API.Controllers
         [HttpDelete]
         [Route("delete-photo/{photoId}")]
 
-        public async Task <ActionResult> DeletePhoto(int photoId){
+        public async Task<ActionResult> DeletePhoto(int photoId)
+        {
 
-            var username = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var username = User.FindFirst(ClaimTypes.Name)?.Value;
             var user = await _userRepository.GetUserByUsernameAsync(username);
 
             var photo = user.Photos.FirstOrDefault(x => x.Id == photoId);
-            
+
             if (photo == null)
             {
-                return NotFound();                
+                return NotFound();
             }
 
             if (photo.IsMain)
@@ -183,7 +199,8 @@ namespace API.Controllers
             {
                 return BadRequest("Problem Deleting the Photo please try again later");
             }
-            else {
+            else
+            {
                 var result = await _photoService.DeletePhoto(photo.PublicId);
                 if (result.Error != null)
                 {
@@ -199,7 +216,7 @@ namespace API.Controllers
             }
 
             return BadRequest("Unable to delete the photo");
-        }   
+        }
 
 
     }

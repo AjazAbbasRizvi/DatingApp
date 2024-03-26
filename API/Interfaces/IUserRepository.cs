@@ -1,4 +1,6 @@
+using API.Dtos;
 using API.EntitiesorModels;
+using API.Helpers;
 
 namespace API.Interfaces
 {
@@ -6,7 +8,7 @@ namespace API.Interfaces
     {
         void Update(AppUser user);
         Task<bool> SaveAllAsync();
-        Task<IEnumerable<AppUser>> GetUserAsync();
+        Task<PagedList<MemberDto>> GetUserAsync(UserParams userParams);
         Task<AppUser> GetUserByIdAsync(int id);
         Task<AppUser> GetUserByUsernameAsync(string username);
     }
